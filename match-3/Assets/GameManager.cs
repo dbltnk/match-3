@@ -6,7 +6,7 @@ public class GameManager : MonoBehaviour {
 
 	// define tile: x, y, color(r,g,b), status(normal, marked for delete, empty)
 
-	public enum Flavour {RED, GREEN, BLUE};
+	public enum Flavour {RED, GREEN, BLUE, PINK, YELLOW};
 	public enum Status {NEW, NORMAL, DELETE, EMPTY};
 	public List<Tile> Tiles = new List<Tile>();
 	public List<GameObject> GameObjects = new List<GameObject>();
@@ -15,6 +15,8 @@ public class GameManager : MonoBehaviour {
 	public GameObject ObjectTileRED;
 	public GameObject ObjectTileGREEN;
 	public GameObject ObjectTileBLUE;
+	public GameObject ObjectTilePINK;
+	public GameObject ObjectTileYELLOW;
 	public GameObject RootObject;
 
 	public class Tile
@@ -55,13 +57,17 @@ public class GameManager : MonoBehaviour {
 		Status s = Status.NEW;
 		Flavour f;
 
-		int r = Random.Range (0, 3);
+		int r = Random.Range (0, 5);
 		if (r == 1) {
 			f = Flavour.RED;
 		} else if (r == 2) {
 			f = Flavour.GREEN;
-		} else {
+		} else if (r == 3) {
 			f = Flavour.BLUE;
+		} else if (r == 4) {
+			f = Flavour.YELLOW;
+		} else {
+			f = Flavour.PINK;
 		}
 
 		Tile tile = new Tile (x, y, f, s);
@@ -80,8 +86,14 @@ public class GameManager : MonoBehaviour {
 				else if (tile.Flavour == Flavour.GREEN){
 					o = GameObject.Instantiate(ObjectTileGREEN, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
 				}
-				else {
+				else if (tile.Flavour == Flavour.BLUE){
 					o = GameObject.Instantiate(ObjectTileBLUE, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
+				}
+				else if (tile.Flavour == Flavour.PINK){
+					o = GameObject.Instantiate(ObjectTilePINK, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
+				}
+				else {
+					o = GameObject.Instantiate(ObjectTileYELLOW, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
 				}
 				GameObjects.Add(o);
 				o.transform.SetParent(RootObject.transform);
