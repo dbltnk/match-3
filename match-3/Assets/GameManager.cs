@@ -122,6 +122,7 @@ public class GameManager : MonoBehaviour {
 		foreach (Tile queryTile in Tiles) {
 			QueryNeighbours(queryTile);
 			//HasNeighbours(queryTile);
+			//LogTile(queryTile);
 		}
 
 		// from br to tl go through each tile
@@ -187,6 +188,33 @@ public class GameManager : MonoBehaviour {
 			MarkForDeletion(leftNeighbour);
 			MarkForDeletion(rightNeighbour);
 		}
+
+		int verticalCount = 0;
+		
+		Tile topNeighbour = GetTile (tile.X, tile.Y + 1);
+		if (topNeighbour != null) {
+			if (IsFlavourEqual (tile, topNeighbour)) {
+				verticalCount += 1;
+			}
+		}
+		
+		Tile bottomNeighbour = GetTile (tile.X, tile.Y - 1);
+		if (bottomNeighbour != null) {
+			if (IsFlavourEqual(tile, bottomNeighbour)) {
+				verticalCount += 1; 
+			}
+		}
+		
+		if (verticalCount >= 2) {
+			MarkForDeletion(tile);
+			MarkForDeletion(topNeighbour);
+			MarkForDeletion(bottomNeighbour);
+		}
+	}
+
+	void LogTile (Tile tile) {
+		string t = string.Concat ("Tile ", tile.X, "-", tile.Y, " is ", tile.Flavour, " has status ", tile.Status, " ref = ", tile.ObjectReference);
+		Debug.Log (t);
 	}
 
 	bool IsFlavourEqual (Tile t1, Tile t2) {
