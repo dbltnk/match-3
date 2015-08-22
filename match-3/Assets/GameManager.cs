@@ -7,10 +7,15 @@ public class GameManager : MonoBehaviour {
 	// define tile: x, y, color(r,g,b), status(normal, marked for delete, empty)
 
 	public enum Flavour {RED, GREEN, BLUE};
-	public enum Status {NORMAL, DELETE, EMPTY};
+	public enum Status {NEW, NORMAL, DELETE, EMPTY};
 	public List<Tile> Tiles = new List<Tile>();
+	public List<GameObject> GameObjects = new List<GameObject>();
 	public int PlayfieldWidth = 5;
 	public int PlayfieldHeight = 7;
+	public GameObject ObjectTileRED;
+	public GameObject ObjectTileGREEN;
+	public GameObject ObjectTileBLUE;
+	public GameObject RootObject;
 
 	public class Tile
 	{
@@ -47,10 +52,10 @@ public class GameManager : MonoBehaviour {
 
 	Tile CreateNewTileOfRandomFlavour(int x, int y) {
 
-		Status s = Status.NORMAL;
+		Status s = Status.NEW;
 		Flavour f;
 
-		int r = Random.Range (1, 3);
+		int r = Random.Range (0, 3);
 		if (r == 1) {
 			f = Flavour.RED;
 		} else if (r == 2) {
@@ -65,6 +70,25 @@ public class GameManager : MonoBehaviour {
 	
 	void Update () {
 		// display playfield
+
+		foreach (Tile tile in Tiles) {
+			if (tile.Status == Status.NEW) {
+				GameObject o;
+				if (tile.Flavour == Flavour.RED) {
+					o = GameObject.Instantiate(ObjectTileRED, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
+				}
+				else if (tile.Flavour == Flavour.GREEN){
+					o = GameObject.Instantiate(ObjectTileGREEN, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
+				}
+				else {
+					o = GameObject.Instantiate(ObjectTileBLUE, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
+				}
+				GameObjects.Add(o);
+				o.transform.SetParent(RootObject.transform);
+				o.name = string.Concat("tile-", tile.X, "-", tile.Y);
+				tile.Status = Status.NORMAL;
+			}
+		}
 
 		// go through tiles from tl to br
 			// for each tile count neighbours with same color
