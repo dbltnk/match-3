@@ -17,6 +17,7 @@ public class GameManager : MonoBehaviour {
 	public GameObject ObjectTileBLUE;
 	public GameObject ObjectTilePINK;
 	public GameObject ObjectTileYELLOW;
+	public GameObject ObjectTileBLACK;
 	public GameObject RootObject;
 
 	public class Tile
@@ -25,13 +26,15 @@ public class GameManager : MonoBehaviour {
 		public int Y;
 		public Flavour Flavour;
 		public Status Status;
+		public GameObject ObjectReference;
 		
-		public Tile(int x, int y, Flavour f, Status s)
+		public Tile(int x, int y, Flavour f, Status s, GameObject o)
 		{
 			X = x;
 			Y = y;
 			Flavour = f;
 			Status = s;
+			ObjectReference = o;
 		}
 	}
 
@@ -70,7 +73,7 @@ public class GameManager : MonoBehaviour {
 			f = Flavour.PINK;
 		}
 
-		Tile tile = new Tile (x, y, f, s);
+		Tile tile = new Tile (x, y, f, s, null);
 		return tile;
 	}
 	
@@ -78,7 +81,16 @@ public class GameManager : MonoBehaviour {
 		// display playfield
 
 		foreach (Tile tile in Tiles) {
-			if (tile.Status == Status.NEW) {
+			if (tile.Status == Status.DELETE) {
+				GameObject.DestroyImmediate(tile.ObjectReference);
+				GameObject o = GameObject.Instantiate(ObjectTileBLACK, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
+				GameObjects.Add(o);
+				o.transform.SetParent(RootObject.transform);
+				o.name = string.Concat("tile-", tile.X, "-", tile.Y, "-DEL");
+				tile.ObjectReference = o;
+				tile.Status = Status.EMPTY;
+			}
+			else if (tile.Status == Status.NEW) {
 				GameObject o;
 				if (tile.Flavour == Flavour.RED) {
 					o = GameObject.Instantiate(ObjectTileRED, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
@@ -98,28 +110,27 @@ public class GameManager : MonoBehaviour {
 				GameObjects.Add(o);
 				o.transform.SetParent(RootObject.transform);
 				o.name = string.Concat("tile-", tile.X, "-", tile.Y);
+				tile.ObjectReference = o;
 				tile.Status = Status.NORMAL;
 			}
 		}
 
+		// go through tiles from tl to br
+		// for each tile count neighbours with same color
+		// if n >= 2 mark all for delete
+		// delete marked tiles
 		foreach (Tile queryTile in Tiles) {
 			QueryNeighbours(queryTile);
 		}
 
-		// go through tiles from tl to br
-			// for each tile count neighbours with same color
-				// if n >= 2 mark all for delete
-		// delete marked tiles
 		// from br to tl go through each tile
 			// if empty then move tile above down
 			// if no tile above then spawn new random tile here
-
-		// GetNeighbours
 	}
 
 	Tile GetTile (int x, int y) 
 	{ 
-		if (x <= 0 || x >= PlayfieldWidth || y <= 0 || y >= PlayfieldHeight)
+		if (x <= 1 || x >= PlayfieldWidth || y <= 1 || y >= PlayfieldHeight)
 			return null;
 
 		foreach (Tile tile in Tiles) {
@@ -133,19 +144,23 @@ public class GameManager : MonoBehaviour {
 
 	void QueryNeighbours (Tile tile) 
 	{
-		if (tile.X <= 0 || tile.X >= PlayfieldWidth || tile.Y <= 0 || tile.Y >= PlayfieldHeight)
+		if (tile.X <= 1 || tile.X >= PlayfieldWidth || tile.Y <= 1 || tile.Y >= PlayfieldHeight)
 			return;
 
 		int horizontalCount = 0;
 
 		Tile leftNeighbour = GetTile (tile.X - 1, tile.Y);
-		if (IsFlavourEqual(tile, leftNeighbour)) {
-			horizontalCount += 1;
+		if (leftNeighbour != null) {
+			if (IsFlavourEqual (tile, leftNeighbour)) {
+				horizontalCount += 1;
+			}
 		}
 
 	    Tile rightNeighbour = GetTile (tile.X + 1, tile.Y);
-		if (IsFlavourEqual(tile, rightNeighbour)) {
-			horizontalCount += 1; 
+		if (rightNeighbour != null) {
+			if (IsFlavourEqual(tile, rightNeighbour)) {
+				horizontalCount += 1; 
+			}
 		}
 
 		if (horizontalCount == 2) {
