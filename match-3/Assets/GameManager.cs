@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class GameManager : MonoBehaviour {
 
@@ -7,6 +8,9 @@ public class GameManager : MonoBehaviour {
 
 	public enum Flavour {RED, GREEN, BLUE};
 	public enum Status {NORMAL, DELETE, EMPTY};
+	public List<Tile> Tiles = new List<Tile>();
+	public int PlayfieldWidth = 5;
+	public int PlayfieldHeight = 7;
 
 	public class Tile
 	{
@@ -26,16 +30,19 @@ public class GameManager : MonoBehaviour {
 
 
 	void Start () {
-
-		int x = 3;
-		int y = 5;
-
-		CreateNewTileOfRandomFlavour (x, y);
-
 		// setup playfield
-			// create rows
-				// create columns
+		// create rows
+		// create columns
 		// for each tile random color
+
+		for (int row = 1; row <= PlayfieldWidth; row++)
+		{
+			for (int line = 1; line <= PlayfieldHeight; line++)
+			{
+				Tile t = CreateNewTileOfRandomFlavour (row, line);
+				Tiles.Add(t);
+			}
+		}
 	}
 
 	Tile CreateNewTileOfRandomFlavour(int x, int y) {
@@ -57,6 +64,8 @@ public class GameManager : MonoBehaviour {
 	}
 	
 	void Update () {
+		// display playfield
+
 		// go through tiles from tl to br
 			// for each tile count neighbours with same color
 				// if n >= 2 mark all for delete
