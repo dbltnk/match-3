@@ -121,6 +121,7 @@ public class GameManager : MonoBehaviour {
 		// delete marked tiles
 		foreach (Tile queryTile in Tiles) {
 			QueryNeighbours(queryTile);
+			//HasNeighbours(queryTile);
 		}
 
 		// from br to tl go through each tile
@@ -130,7 +131,7 @@ public class GameManager : MonoBehaviour {
 
 	Tile GetTile (int x, int y) 
 	{ 
-		if (x <= 1 || x >= PlayfieldWidth || y <= 1 || y >= PlayfieldHeight)
+		if (x < 1 || x > PlayfieldWidth || y < 1 || y > PlayfieldHeight)
 			return null;
 
 		foreach (Tile tile in Tiles) {
@@ -142,10 +143,28 @@ public class GameManager : MonoBehaviour {
 		return null;
 	}
 
+	void HasNeighbours (Tile tile) {
+		Tile leftNeighbour = GetTile (tile.X - 1, tile.Y);
+		Tile rightNeighbour = GetTile (tile.X + 1, tile.Y);
+
+		string t;
+		if (leftNeighbour == null && rightNeighbour == null) {
+			t = string.Concat ("tile ", tile.X, tile.Y, " has no neighbours");
+		} else if (leftNeighbour == null) {
+			t = string.Concat ("tile ", tile.X, tile.Y, " has no left neighbour");
+		} else if (rightNeighbour == null) {
+			t = string.Concat ("tile ", tile.X, tile.Y, " has no right neighbour");
+		} 
+		else {
+			t = string.Concat(tile.X,tile.Y,leftNeighbour.X,leftNeighbour.Y,rightNeighbour.X,rightNeighbour.Y);
+		}
+		Debug.Log(t);
+	}
+
 	void QueryNeighbours (Tile tile) 
 	{
-		if (tile.X <= 1 || tile.X >= PlayfieldWidth || tile.Y <= 1 || tile.Y >= PlayfieldHeight)
-			return;
+		//if (tile.X <= 1 || tile.X >= PlayfieldWidth || tile.Y <= 1 || tile.Y >= PlayfieldHeight)
+		//	return;
 
 		int horizontalCount = 0;
 
@@ -163,7 +182,7 @@ public class GameManager : MonoBehaviour {
 			}
 		}
 
-		if (horizontalCount == 2) {
+		if (horizontalCount >= 2) {
 			MarkForDeletion(tile);
 			MarkForDeletion(leftNeighbour);
 			MarkForDeletion(rightNeighbour);
