@@ -102,6 +102,10 @@ public class GameManager : MonoBehaviour {
 			}
 		}
 
+		foreach (Tile queryTile in Tiles) {
+			QueryNeighbours(queryTile);
+		}
+
 		// go through tiles from tl to br
 			// for each tile count neighbours with same color
 				// if n >= 2 mark all for delete
@@ -111,5 +115,55 @@ public class GameManager : MonoBehaviour {
 			// if no tile above then spawn new random tile here
 
 		// GetNeighbours
+	}
+
+	Tile GetTile (int x, int y) 
+	{ 
+		if (x <= 0 || x >= PlayfieldWidth || y <= 0 || y >= PlayfieldHeight)
+			return null;
+
+		foreach (Tile tile in Tiles) {
+			if (tile.X == x && tile.Y == y) {
+				return tile;
+			}
+		}
+
+		return null;
+	}
+
+	void QueryNeighbours (Tile tile) 
+	{
+		if (tile.X <= 0 || tile.X >= PlayfieldWidth || tile.Y <= 0 || tile.Y >= PlayfieldHeight)
+			return;
+
+		int horizontalCount = 0;
+
+		Tile leftNeighbour = GetTile (tile.X - 1, tile.Y);
+		if (IsFlavourEqual(tile, leftNeighbour)) {
+			horizontalCount += 1;
+		}
+
+	    Tile rightNeighbour = GetTile (tile.X + 1, tile.Y);
+		if (IsFlavourEqual(tile, rightNeighbour)) {
+			horizontalCount += 1; 
+		}
+
+		if (horizontalCount == 2) {
+			MarkForDeletion(tile);
+			MarkForDeletion(leftNeighbour);
+			MarkForDeletion(rightNeighbour);
+		}
+	}
+
+	bool IsFlavourEqual (Tile t1, Tile t2) {
+		if (t1.Flavour == t2.Flavour) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	void MarkForDeletion (Tile tile) {
+		tile.Status = Status.DELETE;
 	}
 }
