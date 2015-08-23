@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class GSM : MonoBehaviour {
+public class GameStateManager : MonoBehaviour {
 
 	public enum GameState {SETUP, CLEANUP, INPUT, MATCHING, DELETE, REFILL, WAITING};
 	public GameState State;
@@ -32,7 +32,6 @@ public class GSM : MonoBehaviour {
 	public void ChangeStateTo (GameState targetState) {
 		string s = string.Concat ("Changing state from ", State.ToString (), " to ", targetState.ToString ());
 		Debug.Log (s);
-
 		State = GameState.WAITING;
 		StartCoroutine(DoChangeState(targetState));
 	}
@@ -43,6 +42,4 @@ public class GSM : MonoBehaviour {
 		string t = string.Concat("Switched state to ", State.ToString());
 		Debug.Log (t);
 	}
-
-
 }

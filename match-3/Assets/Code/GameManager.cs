@@ -1,15 +1,15 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
 public class GameManager : MonoBehaviour {
 
-	public GSM GSM;
-
+	GameStateManager GameStateManager;
+	public GameObject RootObject;
+	
 	public enum Flavour {RED, GREEN, BLUE, PINK, YELLOW, NONE};
 	public enum Status {NEW, NORMAL, DELETE, EMPTY};
 	public List<Tile> Tiles = new List<Tile>();
-	public List<GameObject> GameObjects = new List<GameObject>();
 	public int PlayfieldWidth = 5;
 	public int PlayfieldHeight = 7;
 
@@ -19,7 +19,6 @@ public class GameManager : MonoBehaviour {
 	public GameObject ObjectTilePINK;
 	public GameObject ObjectTileYELLOW;
 	public GameObject ObjectTileBLACK;
-	public GameObject RootObject;
 
 	public class Tile
 	{
@@ -40,7 +39,7 @@ public class GameManager : MonoBehaviour {
 	}
 
 	void Awake () {
-		GSM = GetComponent<GSM> ();
+		GameStateManager = GetComponent<GameStateManager> ();
 	}
 
 	public void Setup () {
@@ -53,14 +52,12 @@ public class GameManager : MonoBehaviour {
 			}
 		}
 		BuildPlayfield ();
-		GSM.ChangeStateTo (GSM.GameState.CLEANUP);
+		GameStateManager.ChangeStateTo (GameStateManager.GameState.CLEANUP);
 	}
 
 	Tile CreateNewTileOfRandomFlavour(int x, int y) {
-
 		Status s = Status.NEW;
 		Flavour f;
-
 		int r = Random.Range (0, 5);
 		if (r == 1) {
 			f = Flavour.RED;
@@ -73,7 +70,6 @@ public class GameManager : MonoBehaviour {
 		} else {
 			f = Flavour.PINK;
 		}
-
 		Tile tile = new Tile (x, y, f, s, null);
 		return tile;
 	}
@@ -97,7 +93,6 @@ public class GameManager : MonoBehaviour {
 				else {
 					o = GameObject.Instantiate(ObjectTileYELLOW, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
 				}
-				GameObjects.Add(o);
 				o.transform.SetParent(RootObject.transform);
 				o.name = string.Concat("tile-", tile.X, "-", tile.Y);
 				tile.ObjectReference = o;
@@ -111,7 +106,6 @@ public class GameManager : MonoBehaviour {
 			if (tile.Status == Status.DELETE) {
 				GameObject.DestroyImmediate (tile.ObjectReference);
 				//GameObject o = GameObject.Instantiate (ObjectTileBLACK, new Vector3 (tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
-				//GameObjects.Add (o);
 				//o.transform.SetParent (RootObject.transform);
 				//o.name = string.Concat ("tile-", tile.X, "-", tile.Y, "-DEL");
 				//tile.ObjectReference = o;
@@ -128,45 +122,37 @@ public class GameManager : MonoBehaviour {
 
 	public bool CheckForMatches () {
 		bool matchFound = false;
-
 		foreach (Tile tile in Tiles) {
 			int horizontalCount = 0;
-			
 			Tile leftNeighbour = GetTile (tile.X - 1, tile.Y);
 			if (leftNeighbour != null) {
 				if (IsFlavourEqual (tile, leftNeighbour)) {
 					horizontalCount += 1;
 				}
 			}
-			
 			Tile rightNeighbour = GetTile (tile.X + 1, tile.Y);
 			if (rightNeighbour != null) {
 				if (IsFlavourEqual(tile, rightNeighbour)) {
 					horizontalCount += 1; 
 				}
 			}
-
 			int verticalCount = 0;
-			
 			Tile topNeighbour = GetTile (tile.X, tile.Y + 1);
 			if (topNeighbour != null) {
 				if (IsFlavourEqual (tile, topNeighbour)) {
 					verticalCount += 1;
 				}
 			}
-			
 			Tile bottomNeighbour = GetTile (tile.X, tile.Y - 1);
 			if (bottomNeighbour != null) {
 				if (IsFlavourEqual(tile, bottomNeighbour)) {
 					verticalCount += 1; 
 				}
 			}
-
 			if (verticalCount >= 2 || horizontalCount >= 2) {
 				matchFound = true;
 			}
 		}
-
 		if (matchFound == true) {
 			return true;
 		}
@@ -178,85 +164,57 @@ public class GameManager : MonoBehaviour {
 	public void Cleanup () {
 		bool cleanUpNeeded = CheckForMatches();
 		if (cleanUpNeeded) {
-			GSM.ChangeStateTo (GSM.GameState.DELETE);
+			GameStateManager.ChangeStateTo (GameStateManager.GameState.DELETE);
 		}
 		else {
-			GSM.ChangeStateTo (GSM.GameState.INPUT);
+			GameStateManager.ChangeStateTo (GameStateManager.GameState.INPUT);
 		}
 	}
 	
 	Tile GetTile (int x, int y) 
 	{ 
-		if (x < 1 || x > PlayfieldWidth || y < 1 || y > PlayfieldHeight)
-			return null;
-
+		if (x < 1 || x > PlayfieldWidth || y < 1 || y > PlayfieldHeight) return null;
 		foreach (Tile tile in Tiles) {
 			if (tile.X == x && tile.Y == y) {
 				return tile;
 			}
 		}
-
 		return null;
-	}
-
-	void HasNeighbours (Tile tile) {
-		Tile leftNeighbour = GetTile (tile.X - 1, tile.Y);
-		Tile rightNeighbour = GetTile (tile.X + 1, tile.Y);
-
-		string t;
-		if (leftNeighbour == null && rightNeighbour == null) {
-			t = string.Concat ("tile ", tile.X, tile.Y, " has no neighbours");
-		} else if (leftNeighbour == null) {
-			t = string.Concat ("tile ", tile.X, tile.Y, " has no left neighbour");
-		} else if (rightNeighbour == null) {
-			t = string.Concat ("tile ", tile.X, tile.Y, " has no right neighbour");
-		} 
-		else {
-			t = string.Concat(tile.X,tile.Y,leftNeighbour.X,leftNeighbour.Y,rightNeighbour.X,rightNeighbour.Y);
-		}
-		Debug.Log(t);
 	}
 
 	void MarkMatchedTilesForDeletion (Tile tile) 
 	{
 		int horizontalCount = 0;
-
 		Tile leftNeighbour = GetTile (tile.X - 1, tile.Y);
 		if (leftNeighbour != null) {
 			if (IsFlavourEqual (tile, leftNeighbour)) {
 				horizontalCount += 1;
 			}
 		}
-
-	    Tile rightNeighbour = GetTile (tile.X + 1, tile.Y);
+		Tile rightNeighbour = GetTile (tile.X + 1, tile.Y);
 		if (rightNeighbour != null) {
 			if (IsFlavourEqual(tile, rightNeighbour)) {
 				horizontalCount += 1; 
 			}
 		}
-
 		if (horizontalCount >= 2) {
 			MarkForDeletion(tile);
 			MarkForDeletion(leftNeighbour);
 			MarkForDeletion(rightNeighbour);
 		}
-
 		int verticalCount = 0;
-		
 		Tile topNeighbour = GetTile (tile.X, tile.Y + 1);
 		if (topNeighbour != null) {
 			if (IsFlavourEqual (tile, topNeighbour)) {
 				verticalCount += 1;
 			}
 		}
-		
 		Tile bottomNeighbour = GetTile (tile.X, tile.Y - 1);
 		if (bottomNeighbour != null) {
 			if (IsFlavourEqual(tile, bottomNeighbour)) {
 				verticalCount += 1; 
 			}
 		}
-		
 		if (verticalCount >= 2) {
 			MarkForDeletion(tile);
 			MarkForDeletion(topNeighbour);
@@ -268,14 +226,11 @@ public class GameManager : MonoBehaviour {
 		foreach (Tile queryTile in Tiles) {
 			MarkMatchedTilesForDeletion(queryTile);
 		}
-
 		UpdatePlayfield ();
-
 		foreach (Tile queryTile in Tiles) {
 			DeleteMarkedTiles(queryTile);
 		}
-
-		GSM.ChangeStateTo (GSM.GameState.REFILL);
+		GameStateManager.ChangeStateTo (GameStateManager.GameState.REFILL);
 	}
 
 	void DeleteMarkedTiles (Tile tile) {
@@ -293,17 +248,15 @@ public class GameManager : MonoBehaviour {
 				MoveLineDown(queryTile.X, queryTile.Y);
 			}
 		}
-
 		// fill with new things
-		// this does not work yet
+		// TODO: this does not work yet
 		foreach (Tile queryTile in Tiles) {
 			if (queryTile.Status == Status.EMPTY) {
 				CreateNewTileOfRandomFlavour(queryTile.X, queryTile.Y);
 			}
 		}
 		UpdatePlayfield ();
-
-		GSM.ChangeStateTo (GSM.GameState.INPUT);
+		GameStateManager.ChangeStateTo (GameStateManager.GameState.INPUT);
 	}
 
 	void MoveLineDown(int row, int line) {
