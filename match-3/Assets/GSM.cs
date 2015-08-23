@@ -38,7 +38,7 @@ public class GSM : MonoBehaviour {
 	}
 
 	IEnumerator DoChangeState(GameState targetState) {
-		yield return new WaitForSeconds(1f);
+		yield return new WaitForSeconds(2f);
 		State = targetState;
 		string t = string.Concat("Switched state to ", State.ToString());
 		Debug.Log (t);

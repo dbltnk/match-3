@@ -80,7 +80,7 @@ public class GameManager : MonoBehaviour {
 
 	void BuildPlayfield () {
 		foreach (Tile tile in Tiles) {
-			if (tile.Status == Status.NEW) {
+			if (tile.Status == Status.NEW ) {
 				GameObject o;
 				if (tile.Flavour == Flavour.RED) {
 					o = GameObject.Instantiate(ObjectTileRED, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
@@ -110,12 +110,18 @@ public class GameManager : MonoBehaviour {
 		foreach (Tile tile in Tiles) {
 			if (tile.Status == Status.DELETE) {
 				GameObject.DestroyImmediate (tile.ObjectReference);
-				GameObject o = GameObject.Instantiate (ObjectTileBLACK, new Vector3 (tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
-				GameObjects.Add (o);
-				o.transform.SetParent (RootObject.transform);
-				o.name = string.Concat ("tile-", tile.X, "-", tile.Y, "-DEL");
-				tile.ObjectReference = o;
+				//GameObject o = GameObject.Instantiate (ObjectTileBLACK, new Vector3 (tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
+				//GameObjects.Add (o);
+				//o.transform.SetParent (RootObject.transform);
+				//o.name = string.Concat ("tile-", tile.X, "-", tile.Y, "-DEL");
+				//tile.ObjectReference = o;
+				tile.ObjectReference = null;
 				tile.Status = Status.EMPTY;
+			}
+			else if (tile.Status != Status.EMPTY) {
+				GameObject.DestroyImmediate (tile.ObjectReference);
+				tile.Status = Status.NEW;
+				BuildPlayfield();
 			}
 		}
 	}
@@ -284,10 +290,29 @@ public class GameManager : MonoBehaviour {
 	public void Refill() {
 		foreach (Tile queryTile in Tiles) {
 			if (queryTile.Status == Status.EMPTY) {
-				//LogTile(queryTile);
-				// refill here
+				MoveLineDown(queryTile.X, queryTile.Y);
 			}
 		}
+
+		// fill with new things
+		// this does not work yet
+		foreach (Tile queryTile in Tiles) {
+			if (queryTile.Status == Status.EMPTY) {
+				CreateNewTileOfRandomFlavour(queryTile.X, queryTile.Y);
+			}
+		}
+		UpdatePlayfield ();
+
+		GSM.ChangeStateTo (GSM.GameState.INPUT);
+	}
+
+	void MoveLineDown(int row, int line) {
+		foreach (Tile queryTile in Tiles) {
+			if (queryTile.X == row && queryTile.Y > line) {
+				queryTile.Y -= 1;
+			}
+		}
+		UpdatePlayfield ();
 	}
 
 	void LogTile (Tile tile) {
