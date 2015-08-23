@@ -3,7 +3,7 @@ using System.Collections;
 
 public class GSM : MonoBehaviour {
 
-	public enum GameState {SETUP, CLEANUP, INPUT, MATCHING, DELETE, REFILL};
+	public enum GameState {SETUP, CLEANUP, INPUT, MATCHING, DELETE, REFILL, WAITING};
 	public GameState State;
 	GameManager GameManager;
 
@@ -18,25 +18,31 @@ public class GSM : MonoBehaviour {
 	void Update () {
 		if (State == GameState.SETUP) {
 			GameManager.Setup ();
-		} 
-		else if (State == GameState.CLEANUP) {
-			bool cleanUpNeeded = GameManager.CheckForMatches();
-			if (cleanUpNeeded) {
-				State = GameState.DELETE;
-			}
-			else {
-				State = GameState.INPUT;
-			}
-		}
-		else if (State == GameState.DELETE) {
-			GameManager.DeleteMatches();
-		}
-		else if (State == GameState.REFILL) {
-			GameManager.Refill();
+		} else if (State == GameState.CLEANUP) {
+			GameManager.Cleanup ();
+		} else if (State == GameState.DELETE) {
+			GameManager.DeleteMatches ();
+		} else if (State == GameState.REFILL) {
+			GameManager.Refill ();
+		} else {
+			// nothing happens		
 		}
 	}
 
 	public void ChangeStateTo (GameState targetState) {
-		State = targetState;
+		string s = string.Concat ("Changing state from ", State.ToString (), " to ", targetState.ToString ());
+		Debug.Log (s);
+
+		State = GameState.WAITING;
+		StartCoroutine(DoChangeState(targetState));
 	}
+
+	IEnumerator DoChangeState(GameState targetState) {
+		yield return new WaitForSeconds(1f);
+		State = targetState;
+		string t = string.Concat("Switched state to ", State.ToString());
+		Debug.Log (t);
+	}
+
+
 }

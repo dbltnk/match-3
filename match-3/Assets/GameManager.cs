@@ -41,7 +41,6 @@ public class GameManager : MonoBehaviour {
 
 	void Awake () {
 		GSM = GetComponent<GSM> ();
-		GSM.ChangeStateTo (GSM.GameState.SETUP);
 	}
 
 	public void Setup () {
@@ -171,11 +170,15 @@ public class GameManager : MonoBehaviour {
 	}
 
 	public void Cleanup () {
-		string m = CheckForMatches().ToString();
-		m = string.Concat ("Matches found: ", m);
-		Debug.Log (m);
+		bool cleanUpNeeded = CheckForMatches();
+		if (cleanUpNeeded) {
+			GSM.ChangeStateTo (GSM.GameState.DELETE);
+		}
+		else {
+			GSM.ChangeStateTo (GSM.GameState.INPUT);
+		}
 	}
-
+	
 	Tile GetTile (int x, int y) 
 	{ 
 		if (x < 1 || x > PlayfieldWidth || y < 1 || y > PlayfieldHeight)
@@ -281,7 +284,7 @@ public class GameManager : MonoBehaviour {
 	public void Refill() {
 		foreach (Tile queryTile in Tiles) {
 			if (queryTile.Status == Status.EMPTY) {
-				LogTile(queryTile);
+				//LogTile(queryTile);
 				// refill here
 			}
 		}
