@@ -4,14 +4,15 @@ using System.Collections.Generic;
 
 public class GameManager : MonoBehaviour {
 
-	// define tile: x, y, color(r,g,b), status(normal, marked for delete, empty)
+	public GSM GSM;
 
-	public enum Flavour {RED, GREEN, BLUE, PINK, YELLOW};
+	public enum Flavour {RED, GREEN, BLUE, PINK, YELLOW, NONE};
 	public enum Status {NEW, NORMAL, DELETE, EMPTY};
 	public List<Tile> Tiles = new List<Tile>();
 	public List<GameObject> GameObjects = new List<GameObject>();
 	public int PlayfieldWidth = 5;
 	public int PlayfieldHeight = 7;
+
 	public GameObject ObjectTileRED;
 	public GameObject ObjectTileGREEN;
 	public GameObject ObjectTileBLUE;
@@ -38,13 +39,12 @@ public class GameManager : MonoBehaviour {
 		}
 	}
 
+	void Awake () {
+		GSM = GetComponent<GSM> ();
+		GSM.ChangeStateTo (GSM.GameState.SETUP);
+	}
 
-	void Start () {
-		// setup playfield
-		// create rows
-		// create columns
-		// for each tile random color
-
+	public void Setup () {
 		for (int row = 1; row <= PlayfieldWidth; row++)
 		{
 			for (int line = 1; line <= PlayfieldHeight; line++)
@@ -53,6 +53,8 @@ public class GameManager : MonoBehaviour {
 				Tiles.Add(t);
 			}
 		}
+		BuildPlayfield ();
+		GSM.ChangeStateTo (GSM.GameState.CLEANUP);
 	}
 
 	Tile CreateNewTileOfRandomFlavour(int x, int y) {
@@ -76,21 +78,10 @@ public class GameManager : MonoBehaviour {
 		Tile tile = new Tile (x, y, f, s, null);
 		return tile;
 	}
-	
-	void Update () {
-		// display playfield
 
+	void BuildPlayfield () {
 		foreach (Tile tile in Tiles) {
-			if (tile.Status == Status.DELETE) {
-				GameObject.DestroyImmediate(tile.ObjectReference);
-				GameObject o = GameObject.Instantiate(ObjectTileBLACK, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
-				GameObjects.Add(o);
-				o.transform.SetParent(RootObject.transform);
-				o.name = string.Concat("tile-", tile.X, "-", tile.Y, "-DEL");
-				tile.ObjectReference = o;
-				tile.Status = Status.EMPTY;
-			}
-			else if (tile.Status == Status.NEW) {
+			if (tile.Status == Status.NEW) {
 				GameObject o;
 				if (tile.Flavour == Flavour.RED) {
 					o = GameObject.Instantiate(ObjectTileRED, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
@@ -114,20 +105,75 @@ public class GameManager : MonoBehaviour {
 				tile.Status = Status.NORMAL;
 			}
 		}
+	}
 
-		// go through tiles from tl to br
-		// for each tile count neighbours with same color
-		// if n >= 2 mark all for delete
-		// delete marked tiles
-		foreach (Tile queryTile in Tiles) {
-			QueryNeighbours(queryTile);
-			//HasNeighbours(queryTile);
-			//LogTile(queryTile);
+	void UpdatePlayfield () {
+		foreach (Tile tile in Tiles) {
+			if (tile.Status == Status.DELETE) {
+				GameObject.DestroyImmediate (tile.ObjectReference);
+				GameObject o = GameObject.Instantiate (ObjectTileBLACK, new Vector3 (tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
+				GameObjects.Add (o);
+				o.transform.SetParent (RootObject.transform);
+				o.name = string.Concat ("tile-", tile.X, "-", tile.Y, "-DEL");
+				tile.ObjectReference = o;
+				tile.Status = Status.EMPTY;
+			}
+		}
+	}
+
+	public bool CheckForMatches () {
+		bool matchFound = false;
+
+		foreach (Tile tile in Tiles) {
+			int horizontalCount = 0;
+			
+			Tile leftNeighbour = GetTile (tile.X - 1, tile.Y);
+			if (leftNeighbour != null) {
+				if (IsFlavourEqual (tile, leftNeighbour)) {
+					horizontalCount += 1;
+				}
+			}
+			
+			Tile rightNeighbour = GetTile (tile.X + 1, tile.Y);
+			if (rightNeighbour != null) {
+				if (IsFlavourEqual(tile, rightNeighbour)) {
+					horizontalCount += 1; 
+				}
+			}
+
+			int verticalCount = 0;
+			
+			Tile topNeighbour = GetTile (tile.X, tile.Y + 1);
+			if (topNeighbour != null) {
+				if (IsFlavourEqual (tile, topNeighbour)) {
+					verticalCount += 1;
+				}
+			}
+			
+			Tile bottomNeighbour = GetTile (tile.X, tile.Y - 1);
+			if (bottomNeighbour != null) {
+				if (IsFlavourEqual(tile, bottomNeighbour)) {
+					verticalCount += 1; 
+				}
+			}
+
+			if (verticalCount >= 2 || horizontalCount >= 2) {
+				matchFound = true;
+			}
 		}
 
-		// from br to tl go through each tile
-			// if empty then move tile above down
-			// if no tile above then spawn new random tile here
+		if (matchFound == true) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
+	public void Cleanup () {
+		string m = CheckForMatches().ToString();
+		m = string.Concat ("Matches found: ", m);
+		Debug.Log (m);
 	}
 
 	Tile GetTile (int x, int y) 
@@ -162,11 +208,8 @@ public class GameManager : MonoBehaviour {
 		Debug.Log(t);
 	}
 
-	void QueryNeighbours (Tile tile) 
+	void MarkMatchedTilesForDeletion (Tile tile) 
 	{
-		//if (tile.X <= 1 || tile.X >= PlayfieldWidth || tile.Y <= 1 || tile.Y >= PlayfieldHeight)
-		//	return;
-
 		int horizontalCount = 0;
 
 		Tile leftNeighbour = GetTile (tile.X - 1, tile.Y);
@@ -209,6 +252,38 @@ public class GameManager : MonoBehaviour {
 			MarkForDeletion(tile);
 			MarkForDeletion(topNeighbour);
 			MarkForDeletion(bottomNeighbour);
+		}
+	}
+
+	public void DeleteMatches () {
+		foreach (Tile queryTile in Tiles) {
+			MarkMatchedTilesForDeletion(queryTile);
+		}
+
+		UpdatePlayfield ();
+
+		foreach (Tile queryTile in Tiles) {
+			DeleteMarkedTiles(queryTile);
+		}
+
+		GSM.ChangeStateTo (GSM.GameState.REFILL);
+	}
+
+	void DeleteMarkedTiles (Tile tile) {
+		if (tile.Status == Status.DELETE) {
+			tile.Flavour = Flavour.NONE;
+			tile.Status = Status.EMPTY;
+			DestroyImmediate (tile.ObjectReference);
+			tile.ObjectReference = null;
+		}
+	}
+
+	public void Refill() {
+		foreach (Tile queryTile in Tiles) {
+			if (queryTile.Status == Status.EMPTY) {
+				LogTile(queryTile);
+				// refill here
+			}
 		}
 	}
 
