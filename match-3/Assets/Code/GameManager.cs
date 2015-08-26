@@ -6,10 +6,10 @@ public class GameManager : MonoBehaviour {
 
 	GameStateManager GameStateManager;
 	public GameObject RootObject;
-	
+	public List<Tile> Tiles = new List<Tile>();
+
 	public enum Flavour {RED, GREEN, BLUE, PINK, YELLOW, NONE};
 	public enum Status {NEW, NORMAL, DELETE, EMPTY};
-	public List<Tile> Tiles = new List<Tile>();
 	public int PlayfieldWidth = 5;
 	public int PlayfieldHeight = 7;
 
@@ -20,7 +20,7 @@ public class GameManager : MonoBehaviour {
 	public GameObject ObjectTileYELLOW;
 	public GameObject ObjectTileBLACK;
 
-	public class Tile
+	public class Tile : MonoBehaviour
 	{
 		public int X;
 		public int Y;
@@ -47,11 +47,10 @@ public class GameManager : MonoBehaviour {
 		{
 			for (int line = 1; line <= PlayfieldHeight; line++)
 			{
-				Tile t = CreateNewTileOfRandomFlavour (row, line);
-				Tiles.Add(t);
+				CreateNewTileOfRandomFlavour (row, line);
 			}
 		}
-		BuildPlayfield ();
+		//BuildPlayfield ();
 		GameStateManager.ChangeStateTo (GameStateManager.GameState.CLEANUP);
 	}
 
@@ -59,66 +58,90 @@ public class GameManager : MonoBehaviour {
 		Status s = Status.NEW;
 		Flavour f;
 		int r = Random.Range (0, 5);
+		GameObject obj;
 		if (r == 1) {
 			f = Flavour.RED;
+			obj = ObjectTileRED;
 		} else if (r == 2) {
 			f = Flavour.GREEN;
+			obj = ObjectTileGREEN;
 		} else if (r == 3) {
 			f = Flavour.BLUE;
+			obj = ObjectTileBLUE;
 		} else if (r == 4) {
 			f = Flavour.YELLOW;
+			obj = ObjectTileYELLOW;
 		} else {
 			f = Flavour.PINK;
+			obj = ObjectTilePINK;
 		}
-		Tile tile = new Tile (x, y, f, s, null);
+
+		string name = string.Concat("tile-", x, "-", y);
+		GameObject root = new GameObject (name);
+		root.transform.SetParent(RootObject.transform);
+
+		Tile tile = root.AddComponent<Tile> ();
+		tile.X = x;
+		tile.Y = y;
+		tile.Flavour = f;
+		tile.Status = s;
+		tile.ObjectReference = root;
+		Tiles.Add(tile);
+
+		root.transform.position = new Vector3 (tile.X, tile.Y, 0f);
+
+		GameObject visual = GameObject.Instantiate(obj) as GameObject;
+		visual.transform.SetParent (root.transform);
+		visual.transform.position = Vector3.zero;
+
 		return tile;
 	}
 
-	void BuildPlayfield () {
-		foreach (Tile tile in Tiles) {
-			if (tile.Status == Status.NEW ) {
-				GameObject o;
-				if (tile.Flavour == Flavour.RED) {
-					o = GameObject.Instantiate(ObjectTileRED, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
-				}
-				else if (tile.Flavour == Flavour.GREEN){
-					o = GameObject.Instantiate(ObjectTileGREEN, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
-				}
-				else if (tile.Flavour == Flavour.BLUE){
-					o = GameObject.Instantiate(ObjectTileBLUE, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
-				}
-				else if (tile.Flavour == Flavour.PINK){
-					o = GameObject.Instantiate(ObjectTilePINK, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
-				}
-				else {
-					o = GameObject.Instantiate(ObjectTileYELLOW, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
-				}
-				o.transform.SetParent(RootObject.transform);
-				o.name = string.Concat("tile-", tile.X, "-", tile.Y);
-				tile.ObjectReference = o;
-				tile.Status = Status.NORMAL;
-			}
-		}
-	}
+//	void BuildPlayfield () {
+//		foreach (Tile tile in Tiles) {
+//			if (tile.Status == Status.NEW ) {
+//				GameObject o;
+//				if (tile.Flavour == Flavour.RED) {
+//					o = GameObject.Instantiate(ObjectTileRED, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
+//				}
+//				else if (tile.Flavour == Flavour.GREEN){
+//					o = GameObject.Instantiate(ObjectTileGREEN, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
+//				}
+//				else if (tile.Flavour == Flavour.BLUE){
+//					o = GameObject.Instantiate(ObjectTileBLUE, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
+//				}
+//				else if (tile.Flavour == Flavour.PINK){
+//					o = GameObject.Instantiate(ObjectTilePINK, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
+//				}
+//				else {
+//					o = GameObject.Instantiate(ObjectTileYELLOW, new Vector3(tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
+//				}
+//				o.transform.SetParent(RootObject.transform);
+//				o.name = string.Concat("tile-", tile.X, "-", tile.Y);
+//				tile.ObjectReference = o;
+//				tile.Status = Status.NORMAL;
+//			}
+//		}
+//	}
 
-	void UpdatePlayfield () {
-		foreach (Tile tile in Tiles) {
-			if (tile.Status == Status.DELETE) {
-				GameObject.DestroyImmediate (tile.ObjectReference);
-				//GameObject o = GameObject.Instantiate (ObjectTileBLACK, new Vector3 (tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
-				//o.transform.SetParent (RootObject.transform);
-				//o.name = string.Concat ("tile-", tile.X, "-", tile.Y, "-DEL");
-				//tile.ObjectReference = o;
-				tile.ObjectReference = null;
-				tile.Status = Status.EMPTY;
-			}
-			else if (tile.Status != Status.EMPTY) {
-				GameObject.DestroyImmediate (tile.ObjectReference);
-				tile.Status = Status.NEW;
-				BuildPlayfield();
-			}
-		}
-	}
+//	void UpdatePlayfield () {
+//		foreach (Tile tile in Tiles) {
+//			if (tile.Status == Status.DELETE) {
+//				GameObject.DestroyImmediate (tile.ObjectReference);
+//				//GameObject o = GameObject.Instantiate (ObjectTileBLACK, new Vector3 (tile.X, tile.Y, 0f), Quaternion.identity) as GameObject;
+//				//o.transform.SetParent (RootObject.transform);
+//				//o.name = string.Concat ("tile-", tile.X, "-", tile.Y, "-DEL");
+//				//tile.ObjectReference = o;
+//				tile.ObjectReference = null;
+//				tile.Status = Status.EMPTY;
+//			}
+//			else if (tile.Status != Status.EMPTY) {
+//				GameObject.DestroyImmediate (tile.ObjectReference);
+//				tile.Status = Status.NEW;
+//				BuildPlayfield();
+//			}
+//		}
+//	}
 
 	public bool CheckForMatches () {
 		bool matchFound = false;
@@ -226,7 +249,7 @@ public class GameManager : MonoBehaviour {
 		foreach (Tile queryTile in Tiles) {
 			MarkMatchedTilesForDeletion(queryTile);
 		}
-		UpdatePlayfield ();
+//		UpdatePlayfield ();
 		foreach (Tile queryTile in Tiles) {
 			DeleteMarkedTiles(queryTile);
 		}
@@ -255,7 +278,7 @@ public class GameManager : MonoBehaviour {
 				CreateNewTileOfRandomFlavour(queryTile.X, queryTile.Y);
 			}
 		}
-		UpdatePlayfield ();
+//		UpdatePlayfield ();
 		GameStateManager.ChangeStateTo (GameStateManager.GameState.INPUT);
 	}
 
@@ -265,7 +288,7 @@ public class GameManager : MonoBehaviour {
 				queryTile.Y -= 1;
 			}
 		}
-		UpdatePlayfield ();
+	//	UpdatePlayfield ();
 	}
 
 	void LogTile (Tile tile) {
